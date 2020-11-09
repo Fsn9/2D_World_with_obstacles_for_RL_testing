@@ -1,3 +1,5 @@
+from geometry import *
+
 # Map
 class Map:
 	def __init__(self):

@@ -1,11 +1,12 @@
 from geometry import *
 
-# Map
-class Map:
-	def __init__(self):
+class World:
+	def __init__(self, robot):
 		self.corners = [Point(-3.0, -3.0), Point(-3.0, 3.0), Point(3.0, 3.0), Point(3.0, -3.0)]
+		self.robot = robot
 		self.edges = list()
 		self.define_edges()
+
 		
 	def define_edges(self):
 		for idx, point in enumerate(self.corners):
@@ -15,7 +16,7 @@ class Map:
 				self.edges.append(Edge(self.corners[idx], self.corners[idx + 1]))
 				
 	def __repr__(self):
-		repr = "Map edges:\n"
+		repr = "World edges:\n"
 		for idx, edge in enumerate(self.edges):	
 			if idx == len(self.edges) - 1:
 				repr += '['+str(idx)+'] ' + str(edge)

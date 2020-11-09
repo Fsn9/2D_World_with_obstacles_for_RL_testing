@@ -1,4 +1,3 @@
-# Robot
 class Robot:
 	radius = 0.09 # meters
 	diameter = radius * 2.0

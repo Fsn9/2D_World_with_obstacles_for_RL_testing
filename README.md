@@ -1,1 +1,3 @@
-# 2D_World_with_Obstacles_for_RL_testing
+## A python simulation of a 2D world with obstacles for testing of RL algorithms
+
+##### It includes the dynamics of a two-wheeled robot with LIDAR perception

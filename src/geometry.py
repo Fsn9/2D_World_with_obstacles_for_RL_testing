@@ -5,7 +5,7 @@ class Point:
 	def __repr__(self):
 		return 'x:'+str(self.x)+', y:'+str(self.y)
 		
-class Edge:
+class Line:
 	def __init__(self, point1, point2):
 		self.points = (point1, point2)
 		try:
@@ -17,8 +17,7 @@ class Edge:
 			self.intercept = point2.x
 		
 	def __repr__(self):
-		return str(self.points)
-		
-class Line:
+		return str(self.points)+', slope: '+str(self.slope)+', intercept: '+str(self.intercept)
+
+class Edge(Line):
 	pass
-	

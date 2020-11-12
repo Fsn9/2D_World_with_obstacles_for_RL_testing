@@ -5,7 +5,7 @@ from random import randint
 
 # Squared world
 class World:
-	def __init__(self, width = 4.0, height = 4.0, robot = Robot()):
+	def __init__(self, robot, width = 4.0, height = 4.0):
 		self.corners = [Point(-height, -width), Point(-height, width), Point(height, width), Point(height, -width)]
 		self.max_x = max([corner.x for corner in self.corners])
 		self.max_y = max([corner.y for corner in self.corners])
@@ -15,7 +15,6 @@ class World:
 		self.obstacles = list()
 		self.edges = list()
 		self.__define_edges()
-		self.__place_robot()
 		self.obstacle_length = Obstacle.length
 
 	def __repr__(self):
@@ -42,9 +41,6 @@ class World:
 				self.edges.append(Edge(self.corners[idx], self.corners[0]))
 			else:
 				self.edges.append(Edge(self.corners[idx], self.corners[idx + 1]))
-
-	def __place_robot(self):
-		self.robot.x, self.robot.y, self.robot.theta = -1.5, -0.5, 0.0
 
 	def distance_to_nearest_wall(self, x, y):
 		return min((abs(x - self.min_x), abs(x - self.max_x), abs(y - self.min_y), abs(y - self.max_y)))
@@ -85,8 +81,33 @@ class World:
 			raise Exception('Obstacle too close to the wall '+'('+str(distance_to_nearest_wall)+'m)'+'. Robot could get stuck between the wall and the obstacle')
 		self.obstacles.append(RoundObstacle(x = x, y = y, dynamics = dynamics))
 
+	def collided_with_obstacle(self, x, y):
+		self.obstacle_radius = self.obstacle_length * 0.5
+		for obstacle in self.obstacles:
+			if (x - obstacle.x)**2 + (y - obstacle.y)**2 <= self.obstacle_radius**2:
+				return True
+
 	def inside_world(self, x, y):
 		return not (x > self.max_x or x < self.min_x or y > self.max_y or y < self.min_y)
+
+	def move_robot(self, v, w):
+		lasers = self.robot.update_lidar(self.obstacles, self.edges)
+		x, y, theta = self.robot.move(v, w)
+		reward = 0.0
+		terminal = False
+		observation = []
+		debug = []
+
+		# Out of the world
+		if not self.inside_world(x, y):
+			terminal = True
+
+		# Collision with obstacle
+		if self.collided_with_obstacle(x, y):
+			terminal = True
+
+		return observation, reward, terminal, debug
+
 
 
 

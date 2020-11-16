@@ -4,25 +4,20 @@ from robot import Robot
 from random import randint
 
 # Squared world
-class World:
+class World(Square):
 	def __init__(self, robot, width = 4.0, height = 4.0):
-		self.corners = [Point(-height, -width), Point(-height, width), Point(height, width), Point(height, -width)]
-		self.max_x = max([corner.x for corner in self.corners])
-		self.max_y = max([corner.y for corner in self.corners])
-		self.min_x = min([corner.x for corner in self.corners])
-		self.min_y = min([corner.y for corner in self.corners])
+		super().__init__(Point(-height, -width), Point(-height, width), Point(height, width), Point(height, -width))
 		self.robot = robot
+		#self.robot.give_global_rotation(self.rotation)
 		self.obstacles = list()
-		self.edges = list()
-		self.__define_edges()
-		self.obstacle_length = Obstacle.length
+		self.obstacle_length = RoundObstacle.diameter
 
 	def __repr__(self):
 		repr_ = "--World--"
 		repr_ += "\nEdges:\n"
-		if self.edges:
-			for idx, edge in enumerate(self.edges):	
-				if idx == len(self.edges) - 1:
+		if self._edges:
+			for idx, edge in enumerate(self._edges):	
+				if idx == len(self._edges) - 1:
 					repr_ += '['+str(idx)+'] ' + str(edge)
 				else:
 					repr_ += '['+str(idx)+'] ' + str(edge) + '\n'
@@ -35,15 +30,8 @@ class World:
 					repr_ += '['+str(idx)+'] ' + str(obstacle) + '\n'
 		return repr_
 
-	def __define_edges(self):
-		for idx, point in enumerate(self.corners):
-			if idx == len(self.corners) - 1:
-				self.edges.append(Edge(self.corners[idx], self.corners[0]))
-			else:
-				self.edges.append(Edge(self.corners[idx], self.corners[idx + 1]))
-
 	def distance_to_nearest_wall(self, x, y):
-		return min((abs(x - self.min_x), abs(x - self.max_x), abs(y - self.min_y), abs(y - self.max_y)))
+		return min((abs(x - self._min_x), abs(x - self._max_x), abs(y - self._min_y), abs(y - self._max_y)))
 		
 	def set_obstacles_randomly(self, quantity = 4, type_ = 'round', dynamics = None):
 		x, y = -10000, -10000	
@@ -51,8 +39,8 @@ class World:
 			if type_ == 'round':
 				while True:
 					counter_obstacles = 0
-					x = randint(self.min_x, self.max_x)
-					y = randint(self.min_y, self.max_y)
+					x = randint(self._min_x, self._max_x)
+					y = randint(self._min_y, self._max_y)
 					if self.inside_world(x,y) and self.distance_to_nearest_wall(x,y) > self.robot.diameter:
 						for obstacle in self.obstacles:
 							if x != obstacle.x and y != obstacle.y:
@@ -63,8 +51,8 @@ class World:
 			else:
 				while True:
 					counter_obstacles = 0
-					x = randint(self.min_x, self.max_x)
-					y = randint(self.min_y, self.max_y)
+					x = randint(self._min_x, self._max_x)
+					y = randint(self._min_y, self._max_y)
 					if self.inside_world(x,y) and self.distance_to_nearest_wall(x,y) > self.robot.diameter:
 						for obstacle in self.obstacles:
 							if x != obstacle.x and y != obstacle.y:
@@ -84,19 +72,24 @@ class World:
 	def collided_with_obstacle(self, x, y):
 		self.obstacle_radius = self.obstacle_length * 0.5
 		for obstacle in self.obstacles:
-			if (x - obstacle.x)**2 + (y - obstacle.y)**2 <= self.obstacle_radius**2:
+			if obstacle.inside(x,y):
 				return True
 
 	def inside_world(self, x, y):
-		return not (x > self.max_x or x < self.min_x or y > self.max_y or y < self.min_y)
+		return not (x > self._max_x or x < self._min_x or y > self._max_y or y < self._min_y)
 
 	def move_robot(self, v, w):
-		lasers = self.robot.update_lidar(self.obstacles, self.edges)
+		lasers = self.robot.update_lidar(self.obstacles, self._edges)
+		print(lasers)
 		x, y, theta = self.robot.move(v, w)
+		print('x',x,'y',y, 'theta',theta)
 		reward = 0.0
 		terminal = False
 		observation = []
 		debug = []
+		import matplotlib.pyplot as plt
+		plt.plot([x for x in range(-20,20)], lasers[-20:-1]+lasers[0:21])
+		plt.show()
 
 		# Out of the world
 		if not self.inside_world(x, y):

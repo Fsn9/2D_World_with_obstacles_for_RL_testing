@@ -5,5 +5,5 @@ class Agent:
 
 	def act(self, v, w):
 		observation, reward, terminal, debug = self.__world.move_robot(v,w)
-		print(observation, reward, terminal, debug)
-		print(self.__robot)
+		#print(observation, reward, terminal, debug)
+		#print(self.__robot)

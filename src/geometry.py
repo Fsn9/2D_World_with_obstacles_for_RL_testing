@@ -77,6 +77,19 @@ class Line:
 		if not self._slope:
 			return x == self._intercept or isclose(x, self._intercept, abs_tol = 1e-4)
 		return y == self._slope * x + self._intercept or isclose(y, self._slope * x + self._intercept, abs_tol = 1e-4)
+
+	def intersects_line(self, other):
+		if self._slope is not None and other.slope is not None:
+			x = (other.intercept - self._intercept) / (self._slope - other.slope)
+			y = (other.intercept * self._slope - self._intercept * other.slope) / (self._slope - other.slope)
+			return [x,y]
+		elif self._slope is not None and not other.slope:
+			return [other.intercept, self._slope * other.intercept + self._intercept]
+		elif not self._slope and other.slope is not None:
+			return [self._intercept, other.slope * self._intercept + other.intercept]
+		else:
+			return None
+
 	@property
 	def slope(self):
 		return self._slope

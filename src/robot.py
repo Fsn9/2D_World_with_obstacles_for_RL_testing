@@ -10,14 +10,14 @@ class Robot:
 	radius = 0.09
 	diameter = radius * 2.0
 	def __init__(self, dt = 0.04):
-		self.__x, self.__y, self.__theta = 0.0, 1.0, np.pi*0.5
+		self.__x, self.__y, self.__theta = 0.0, 1.0, np.pi * 0.5
 		self.__position = Point(self.__x, self.__y)
 		self.__dt = dt # control period
 		self.obstacle_radius = RoundObstacle.diameter * 0.5
 		self.__lidar = LIDAR(frequency = 50e3, origin = self.__position, obstacle_radius = self.obstacle_radius)
 
 	def __repr__(self):
-		return '--Robot--' + '\nx: ' + str(self.__x) + '\ny: ' + str(self.__y) + '\ntheta: ' + str(self.__theta) + '\n'
+		return '--Robot--' + '\nx: ' + str(self.__x) + ', y: ' + str(self.__y) + ',theta: ' + str(self.__theta) + '\n'
 	@property
 	def x(self):
 		return self.__x
@@ -56,7 +56,6 @@ class Robot:
 		min_distance = self.__lidar.min_distance
 		max_distance = self.__lidar.max_distance
 		to_rad = np.pi / 180.0
-		
 		for angle in range(self.__lidar.n_lasers):
 			angle_rad = angle * to_rad
 			# Laser line
@@ -70,6 +69,7 @@ class Robot:
 			slope = laser_line.slope
 			intercept = laser_line.intercept
 			closest_obstacle = []
+			closest_wall = []
 			minimum = HIGHEST_NUMBER
 
 			# Compute distances to obstacles
@@ -100,11 +100,21 @@ class Robot:
 							minimum = distance
 							closest_obstacle = obstacle
 
-			# else, check if laser hit map corner
-			#for edge in edges:
+			# Compute distances to map's edges
+			for edge in edges:
+				points = laser_line.intersects_line(edge)
+				if points:
+					x, y = points
+					distance_front = self.distance_between_points(xi, yi, x, y)
+					distance_back = self.distance_between_points(xi_back, yi_back, x, y)
+					if self.__lidar.in_sight(xi, yi, x, y) and distance_front < distance_back:
+						if distance_front < minimum:
+							minimum = distance_front
+							closest_wall = edge
 
 			self.__lidar.lasers[angle] = np.clip(minimum, self.__lidar.min_distance, self.__lidar.max_distance)
 		return self.__lidar.lasers
+
 	def compute_distance(self, x1, y1, x2, y2, laser_x_front, laser_y_front, laser_x_back, laser_y_back, line, circle):
 		minimum_distance = HIGHEST_NUMBER
 		right_points = None
@@ -137,6 +147,15 @@ class Robot:
 	def distance_between_points(x1, y1, x2, y2):
 		return np.linalg.norm(np.array([x1,y1]) - np.array([x2,y2]))
 
+	def plot_laser_distances(self, first_angle, last_angle):
+		if 0 < abs(last_angle - first_angle) < self.__lidar.n_lasers and last_angle > first_angle:
+			if first_angle < 0 and last_angle > 0:
+				plt.plot([x for x in range(first_angle, last_angle)], self.__lidar.lasers[first_angle:] + self.__lidar.lasers[0:last_angle])
+			else:
+				plt.plot([x for x in range(first_angle, last_angle)], self.__lidar.lasers[first_angle:last_angle])
+			plt.show()
+		else:
+			raise Exception('Angle range must be between 0 and 360 and first angle needs to be lower than last_angle')
 class LIDAR:
 	n_lasers = 360
 	min_distance = 0.12

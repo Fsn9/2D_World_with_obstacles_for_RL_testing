@@ -3,26 +3,26 @@ from agent import Agent
 from robot import Robot
 
 # Initialize robot and world
-robot = Robot(dt = 0.5)
-world = World(robot = robot, width = 4, height = 4)
+world = World(dt = 1, width = 4, height = 4)
 
 # Add obstacles
-world.add_obstacle(2.0, 2.0)
-world.add_obstacle(2.0, 0.0)
-world.add_obstacle(2.0,-2.0)
-world.add_obstacle(0.0, 2.0)
+world.add_obstacle(1.0, 1.0)
+world.add_obstacle(1.0, 0.0)
+world.add_obstacle(1.0, -1.0)
+world.add_obstacle(0.0, 1.0)
 world.add_obstacle(0.0, 0.0)
-world.add_obstacle(0.0,-2.0)
-world.add_obstacle(-2.0, 2.0)
-world.add_obstacle(-2.0, 0.0)
-world.add_obstacle(-2.0,-2.0)
+world.add_obstacle(0.0, -1.0)
+world.add_obstacle(-1.0, 1.0)
+world.add_obstacle(-1.0, 0.0)
+world.add_obstacle(-1.0, -1.0)
 
 # Give world and robot to the agent
-agent = Agent(world = world, robot = robot)
+agent = Agent(world = world)
 
 # Step robot
-v = 0.15
-w = 0.2
-samples = 20
+v = 0.1
+w = 0.05
+samples = 10
+
 for t in range(samples):
 	agent.act(v, w)

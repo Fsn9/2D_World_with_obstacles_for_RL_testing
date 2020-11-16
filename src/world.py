@@ -5,10 +5,9 @@ from random import randint
 
 # Squared world
 class World(Square):
-	def __init__(self, robot, width = 4.0, height = 4.0):
-		super().__init__(Point(-height, -width), Point(-height, width), Point(height, width), Point(height, -width))
-		self.robot = robot
-		#self.robot.give_global_rotation(self.rotation)
+	def __init__(self, dt = 1, width = 4.0, height = 4.0):
+		super().__init__(Point(-height * 0.5, -width * 0.5), Point(-height * 0.5, width * 0.5), Point(height * 0.5, width * 0.5), Point(height * 0.5, -width * 0.5))
+		self.robot = Robot(dt = dt)
 		self.obstacles = list()
 		self.obstacle_length = RoundObstacle.diameter
 
@@ -81,15 +80,12 @@ class World(Square):
 	def move_robot(self, v, w):
 		x, y, theta = self.robot.move(v, w)
 		lasers = self.robot.update_lidar(self.obstacles, self._edges)
-		print(lasers)
-		print('x',x,'y',y, 'theta',theta)
+		self.robot.plot_laser_distances(-179,180)
+		print(self.robot)
 		reward = 0.0
 		terminal = False
 		observation = []
 		debug = []
-		import matplotlib.pyplot as plt
-		plt.plot([x for x in range(360)], lasers)
-		plt.show()
 
 		# Out of the world
 		if not self.inside_world(x, y):

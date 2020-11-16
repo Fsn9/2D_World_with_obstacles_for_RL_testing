@@ -57,7 +57,7 @@ class Robot:
 		max_distance = self.__lidar.max_distance
 		to_rad = np.pi / 180.0
 		
-		for angle in range(-20,20):
+		for angle in range(self.__lidar.n_lasers):
 			angle_rad = angle * to_rad
 			# Laser line
 			xi = self.__x + min_distance * np.cos(angle_rad + self.__theta)
@@ -102,7 +102,7 @@ class Robot:
 
 			# else, check if laser hit map corner
 			#for edge in edges:
-			
+
 			self.__lidar.lasers[angle] = np.clip(minimum, self.__lidar.min_distance, self.__lidar.max_distance)
 		return self.__lidar.lasers
 	def compute_distance(self, x1, y1, x2, y2, laser_x_front, laser_y_front, laser_x_back, laser_y_back, line, circle):

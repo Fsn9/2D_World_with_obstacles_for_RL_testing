@@ -17,7 +17,6 @@ world.add_obstacle(-2.0, 2.0)
 world.add_obstacle(-2.0, 0.0)
 world.add_obstacle(-2.0,-2.0)
 
-
 # Give world and robot to the agent
 agent = Agent(world = world, robot = robot)
 

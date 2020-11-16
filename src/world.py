@@ -79,16 +79,16 @@ class World(Square):
 		return not (x > self._max_x or x < self._min_x or y > self._max_y or y < self._min_y)
 
 	def move_robot(self, v, w):
+		x, y, theta = self.robot.move(v, w)
 		lasers = self.robot.update_lidar(self.obstacles, self._edges)
 		print(lasers)
-		x, y, theta = self.robot.move(v, w)
 		print('x',x,'y',y, 'theta',theta)
 		reward = 0.0
 		terminal = False
 		observation = []
 		debug = []
 		import matplotlib.pyplot as plt
-		plt.plot([x for x in range(-20,20)], lasers[-20:-1]+lasers[0:21])
+		plt.plot([x for x in range(360)], lasers)
 		plt.show()
 
 		# Out of the world

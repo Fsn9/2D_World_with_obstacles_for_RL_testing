@@ -6,9 +6,13 @@ from random import randint
 # Squared world
 class World(Square):
 	def __init__(self, dt = 1, width = 4.0, height = 4.0):
-		super().__init__(Point(-height * 0.5, -width * 0.5), Point(-height * 0.5, width * 0.5), Point(height * 0.5, width * 0.5), Point(height * 0.5, -width * 0.5))
+		super().__init__(Point(-width * 0.5, -height * 0.5 ), Point(width * 0.5, -height * 0.5), Point(width * 0.5, height * 0.5), Point(-width * 0.5, height * 0.5))
+		# Edges
+		self.objects = list()
+		self.objects.extend(self._edges)
+		# Robot
 		self.robot = Robot(dt = dt)
-		self.obstacles = list()
+		# Obstacles
 		self.obstacle_length = RoundObstacle.diameter
 
 	def __repr__(self):
@@ -46,7 +50,7 @@ class World(Square):
 								counter_obstacles += 1
 					if counter_obstacles == len(self.obstacles):
 						break
-				self.obstacles.append(RoundObstacle(x = x, y = y, dynamics = dynamics))
+				self.objects.append(RoundObstacle(x = x, y = y, dynamics = dynamics))
 			else:
 				while True:
 					counter_obstacles = 0
@@ -58,7 +62,7 @@ class World(Square):
 								counter_obstacles += 1
 					if counter_obstacles == len(self.obstacles):
 						break
-				self.obstacles.append(SquaredObstacle(x = x, y = y, dynamics = dynamics))
+				self.objects.append(SquaredObstacle(x = x, y = y, dynamics = dynamics))
 
 	def add_obstacle(self, x, y, type_ = 'round', dynamics = None):
 		if not self.inside_world(x,y):
@@ -66,20 +70,26 @@ class World(Square):
 		distance_to_nearest_wall = self.distance_to_nearest_wall(x,y) - self.obstacle_length
 		if distance_to_nearest_wall <= self.robot.diameter:
 			raise Exception('Obstacle too close to the wall '+'('+str(distance_to_nearest_wall)+'m)'+'. Robot could get stuck between the wall and the obstacle')
-		self.obstacles.append(RoundObstacle(x = x, y = y, dynamics = dynamics))
+		self.objects.append(RoundObstacle(x = x, y = y, dynamics = dynamics))
 
-	def collided_with_obstacle(self, x, y):
-		self.obstacle_radius = self.obstacle_length * 0.5
-		for obstacle in self.obstacles:
-			if obstacle.inside(x,y):
-				return True
+	def collided(self, x, y):
+		for obj in self.objects:
+			if isinstance(obj, Circle):
+				if self.robot.intersects_circle(obj):
+					return True
+			elif isinstance(obj, Line):
+				if self.robot.intersects_line(obj):
+					return True
+			else:
+				pass
+			return False
 
 	def inside_world(self, x, y):
 		return not (x > self._max_x or x < self._min_x or y > self._max_y or y < self._min_y)
 
 	def move_robot(self, v, w):
 		x, y, theta = self.robot.move(v, w)
-		lasers = self.robot.update_lidar(self.obstacles, self._edges)
+		lasers = self.robot.update_lidar(self.objects)
 		self.robot.plot_laser_distances(-179,180)
 		print(self.robot)
 		reward = 0.0
@@ -87,12 +97,8 @@ class World(Square):
 		observation = []
 		debug = []
 
-		# Out of the world
-		if not self.inside_world(x, y):
-			terminal = True
-
 		# Collision with obstacle
-		if self.collided_with_obstacle(x, y):
+		if self.collided(x,y) or not self.inside_world(x,y):
 			terminal = True
 
 		return observation, reward, terminal, debug

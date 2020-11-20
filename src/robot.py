@@ -55,6 +55,7 @@ class Robot(Circle):
 
 	def update_lidar(self, map_objects):
 		for angle in range(self.__lidar.n_lasers):
+			closest_object = []
 			minimum = HIGHEST_NUMBER
 			xi, yi, xf, yf, xi_back, yi_back = self.__lidar.get_laser_points(angle, self._x, self._y, self.__theta)
 			laser_line = Line(Point(x = xi, y = yi), Point(x = xf , y = yf))
@@ -78,6 +79,7 @@ class Robot(Circle):
 				if distance:
 					if distance < minimum:
 						minimum = distance
+						closest_object = obj
 			self.__lidar.lasers[angle] = np.clip(minimum, self.__lidar.min_distance, self.__lidar.max_distance)
 		return self.__lidar.lasers
 
@@ -89,19 +91,16 @@ class Robot(Circle):
 			if distance < minimum_distance:
 				minimum_distance = distance
 				right_points = x1, y1
-
 		if circle.intersects(x1, y2) and line.intersects(x1, y2):
 			distance = self.__lidar.distance_between_points(x1, y2, laser_x_front, laser_y_front)
 			if distance < minimum_distance:
 				minimum_distance = distance
 				right_points = x1, y2
-
 		if circle.intersects(x2, y1) and line.intersects(x2, y1):
 			distance = self.__lidar.distance_between_points(x2, y1, laser_x_front, laser_y_front)
 			if distance < minimum_distance:
 				minimum_distance = distance
 				right_points = x2, y1
-
 		if circle.intersects(x2, y2) and line.intersects(x2, y2):
 			distance = self.__lidar.distance_between_points(x2, y2, laser_x_front, laser_y_front)
 			if distance < minimum_distance:
@@ -129,12 +128,12 @@ class LIDAR:
 		self.obstacle_radius = obstacle_radius
 		self.lasers = [0.0 for angle in range(self.n_lasers)]
 
-	def in_sight(self, x_sight, y_sight, x_sight_back, y_sight_back, x_object, y_object, object):
+	def in_sight(self, x_sight, y_sight, x_sight_back, y_sight_back, x_object, y_object, obj):
 		distance_front = self.distance_between_points(x_sight, y_sight, x_object, y_object)
 		distance_back = self.distance_between_points(x_sight_back, y_sight_back, x_object, y_object)
-		if isinstance(object, Circle):
-			return (np.sqrt((x_object - x_sight)**2 + (y_object - y_sight)**2) - object.radius) <= self.max_distance and distance_front < distance_back
-		elif isinstance(object, Line):
+		if isinstance(obj, Circle):
+			return (np.sqrt((x_object - x_sight)**2 + (y_object - y_sight)**2) - obj.radius) <= self.max_distance and distance_front < distance_back
+		elif isinstance(obj, Line):
 			return (np.sqrt((x_object - x_sight)**2 + (y_object - y_sight)**2)) <= self.max_distance and distance_front < distance_back
 
 	def get_laser_points(self, angle, x, y, theta):

@@ -90,7 +90,7 @@ class World(Square):
 	def move_robot(self, v, w):
 		x, y, theta = self.robot.move(v, w)
 		lasers = self.robot.update_lidar(self.objects)
-		self.robot.plot_laser_distances(-179,180)
+		#self.robot.plot_laser_distances(-180,179)
 		print(self.robot)
 		reward = 0.0
 		terminal = False

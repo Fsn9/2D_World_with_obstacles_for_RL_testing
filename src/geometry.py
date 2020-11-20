@@ -67,9 +67,13 @@ class Line:
 		if not (denominator == 0 or isclose(point2.x, point1.x)):
 			self._slope = (point2.y -  point1.y) / (point2.x - point1.x)
 			self._intercept = point2.y - self._slope * point2.x
+			if abs(self._slope) > self.highest_slope:
+				self._slope = None
+				self._intercept = point2.x
 		else:
 			self._slope = None
 			self._intercept = point2.x	
+
 	def __repr__(self):
 		return str(self._points)+', slope: '+str(self._slope)+', intercept: '+str(self._intercept)
 
@@ -95,19 +99,19 @@ class Line:
 		if not self._slope:
 			discriminant = radius**2 - (self._intercept - xc)**2
 			if discriminant <= 0:
-				return None
-			x1 = x2 = intercept
+				return False
+			x1 = x2 = self._intercept
 			y1 = np.sqrt(discriminant) + yc
 			y2 = -np.sqrt(discriminant) + yc					
 		else:
 			discriminant = (radius ** 2) * (1 + self._slope ** 2) - (yc - self._slope * xc - self._intercept) ** 2
 			if discriminant <= 0:
-				return None
+				return False
 			x1 = (xc + yc * self._slope - self._intercept * self._slope + np.sqrt(discriminant)) / (1 + self._slope ** 2)
 			x2 = (xc + yc * self._slope - self._intercept * self._slope - np.sqrt(discriminant)) / (1 + self._slope ** 2)
 			y1 = (self._intercept + xc * self._slope + yc * self._slope ** 2 + self._slope * np.sqrt(discriminant)) / (1 + self._slope ** 2)
 			y2 = (self._intercept + xc * self._slope + yc * self._slope ** 2 - self._slope * np.sqrt(discriminant)) / (1 + self._slope ** 2)
-		return [x1,x2,y1,y2]
+		return [x1,y1,x2,y2]
 
 
 	@property
@@ -152,17 +156,17 @@ class Circle:
 		if not line.slope:
 			discriminant = radius**2 - (line.intercept - xc)**2
 			if discriminant <= 0:
-				return None
-			x1 = x2 = intercept
+				return False
+			x1 = x2 = line.intercept
 			y1 = np.sqrt(discriminant) + yc
 			y2 = -np.sqrt(discriminant) + yc					
 		else:
 			discriminant = (radius ** 2) * (1 + line.slope ** 2) - (yc - line.slope * xc - line.intercept) ** 2
 			if discriminant <= 0:
-				return None
+				return False
 			x1 = (xc + yc * line.slope - line.intercept * line.slope + np.sqrt(discriminant)) / (1 + line.slope ** 2)
 			x2 = (xc + yc * line.slope - line.intercept * line.slope - np.sqrt(discriminant)) / (1 + line.slope ** 2)
 			y1 = (line.intercept + xc * line.slope + yc * line.slope ** 2 + line.slope * np.sqrt(discriminant)) / (1 + line.slope ** 2)
 			y2 = (line.intercept + xc * line.slope + yc * line.slope ** 2 - line.slope * np.sqrt(discriminant)) / (1 + line.slope ** 2)
-		return [x1,x2,y1,y2]
+		return [x1,y1,x2,y2]
 

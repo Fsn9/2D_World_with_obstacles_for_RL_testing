@@ -22,9 +22,9 @@ agent = Agent(world = world)
 # Step robot
 v = 0.1
 w = 0
-samples = 10
+samples = 100
 for t in range(samples):
 	start = time.time()
 	agent.act(v, w)
 	end = time.time()
-	print(end - start)
+	print('simulation cycle time:', (end - start) * 1000 ,'ms')

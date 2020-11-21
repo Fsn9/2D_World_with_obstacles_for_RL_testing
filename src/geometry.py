@@ -153,9 +153,12 @@ class Circle:
 		return (self._radius + other.radius) > d and d > abs(self._radius - other.radius)
 	def intersects_line(self, line):
 		radius, xc, yc = self._radius, self._x, self._y
+		start = time.time()
 		if not line.slope:
 			discriminant = radius**2 - (line.intercept - xc)**2
 			if discriminant <= 0:
+				end = time.time()
+				print('diff:', end-start)
 				return False
 			x1 = x2 = line.intercept
 			y1 = np.sqrt(discriminant) + yc
@@ -163,10 +166,14 @@ class Circle:
 		else:
 			discriminant = (radius ** 2) * (1 + line.slope ** 2) - (yc - line.slope * xc - line.intercept) ** 2
 			if discriminant <= 0:
+				end = time.time()
+				print('diff:', end-start)
 				return False
 			x1 = (xc + yc * line.slope - line.intercept * line.slope + np.sqrt(discriminant)) / (1 + line.slope ** 2)
 			x2 = (xc + yc * line.slope - line.intercept * line.slope - np.sqrt(discriminant)) / (1 + line.slope ** 2)
 			y1 = (line.intercept + xc * line.slope + yc * line.slope ** 2 + line.slope * np.sqrt(discriminant)) / (1 + line.slope ** 2)
 			y2 = (line.intercept + xc * line.slope + yc * line.slope ** 2 - line.slope * np.sqrt(discriminant)) / (1 + line.slope ** 2)
+		end = time.time()
+		print('diff:', end-start)
 		return [x1,y1,x2,y2]
 

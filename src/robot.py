@@ -78,6 +78,7 @@ class Robot(Circle):
 							distance = self.__lidar.distance_between_points(xi, yi, xe, ye)
 				else:
 					pass
+					
 				if distance:
 					if distance < minimum:
 						minimum = distance
@@ -134,9 +135,9 @@ class LIDAR:
 
 	def in_sight(self, x_sight, y_sight, x_forward, y_forward, x_object, y_object, obj):
 		if isinstance(obj, Circle):
-			return (np.sqrt((x_object - x_sight)**2 + (y_object - y_sight)**2) - obj.radius) <= self.max_distance and (x_sight <= x_object < x_forward and y_sight <= y_object < y_forward)
+			return (x_sight <= x_object < x_forward and y_sight <= y_object < y_forward) and (self.distance_between_points(x_object, y_object, x_sight, y_sight) - obj.radius) <= self.max_distance
 		elif isinstance(obj, Line):
-			return (np.sqrt((x_object - x_sight)**2 + (y_object - y_sight)**2)) <= self.max_distance and (x_sight <= x_object < x_forward and y_sight <= y_object < y_forward)
+			return (x_sight <= x_object < x_forward and y_sight <= y_object < y_forward) and self.distance_between_points(x_object, y_object, x_sight, y_sight) <= self.max_distance 
 
 	def get_laser_points(self, angle, x, y, theta):
 		angle_rad = angle * self.to_rad

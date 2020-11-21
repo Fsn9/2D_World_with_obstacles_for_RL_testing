@@ -1,5 +1,6 @@
 import numpy as np
 from math import isclose
+import time
 
 class Rotation:
 	def __init__(self, rotation_deg):
@@ -56,8 +57,6 @@ class Square:
 				self._edges.append(Edge(self._corners[idx], self._corners[0]))
 			else:
 				self._edges.append(Edge(self._corners[idx], self._corners[idx + 1]))
-
-
 class Line:
 	highest_slope = 1e4
 	def __init__(self, point1, point2):
@@ -95,6 +94,7 @@ class Line:
 			return None
 
 	def intersects_circle(self, circle):
+		start = time.time()
 		radius, xc, yc = circle.radius, circle.x, circle.y
 		if not self._slope:
 			discriminant = radius**2 - (self._intercept - xc)**2
@@ -111,8 +111,8 @@ class Line:
 			x2 = (xc + yc * self._slope - self._intercept * self._slope - np.sqrt(discriminant)) / (1 + self._slope ** 2)
 			y1 = (self._intercept + xc * self._slope + yc * self._slope ** 2 + self._slope * np.sqrt(discriminant)) / (1 + self._slope ** 2)
 			y2 = (self._intercept + xc * self._slope + yc * self._slope ** 2 - self._slope * np.sqrt(discriminant)) / (1 + self._slope ** 2)
+		end = time.time()
 		return [x1,y1,x2,y2]
-
 
 	@property
 	def slope(self):

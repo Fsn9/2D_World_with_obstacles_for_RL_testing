@@ -3,6 +3,7 @@ from geometry import *
 from obstacle import *
 import math
 import matplotlib.pyplot as plt
+import time
 
 HIGHEST_NUMBER = 1e10
 
@@ -55,24 +56,25 @@ class Robot(Circle):
 
 	def update_lidar(self, map_objects):
 		for angle in range(self.__lidar.n_lasers):
+			start = time.time()
 			closest_object = []
 			minimum = HIGHEST_NUMBER
-			xi, yi, xf, yf, xi_back, yi_back = self.__lidar.get_laser_points(angle, self._x, self._y, self.__theta)
+			xi, yi, xf, yf = self.__lidar.get_laser_points(angle, self._x, self._y, self.__theta)
 			laser_line = Line(Point(x = xi, y = yi), Point(x = xf , y = yf))
 			for obj in map_objects:
 				distance = None
 				if isinstance(obj, Circle):
 					xo, yo = obj.x, obj.y
-					if self.__lidar.in_sight(xi, yi, xi_back, yi_back, xo, yo, obj):
+					if self.__lidar.in_sight(xi, yi, xf, yf, xo, yo, obj):
 						points = laser_line.intersects_circle(obj)
 						if points:
 							x1, y1, x2, y2 = points
-							distance = self.compute_distance(x1, y1, x2, y2, xi, yi, xi_back, yi_back, laser_line, obj)
+							distance = self.compute_distance(x1, y1, x2, y2, xi, yi, laser_line, obj)
 				elif isinstance(obj, Line):
 					points = laser_line.intersects_line(obj)
 					if points:
 						xe, ye = points
-						if self.__lidar.in_sight(xi, yi, xi_back, yi_back, xe, ye, obj):
+						if self.__lidar.in_sight(xi, yi, xf, yf, xe, ye, obj):
 							distance = self.__lidar.distance_between_points(xi, yi, xe, ye)
 				else:
 					pass
@@ -81,9 +83,11 @@ class Robot(Circle):
 						minimum = distance
 						closest_object = obj
 			self.__lidar.lasers[angle] = np.clip(minimum, self.__lidar.min_distance, self.__lidar.max_distance)
+			#end = time.time()
+			#print('1:',end-start)
 		return self.__lidar.lasers
 
-	def compute_distance(self, x1, y1, x2, y2, laser_x_front, laser_y_front, laser_x_back, laser_y_back, line, circle):
+	def compute_distance(self, x1, y1, x2, y2, laser_x_front, laser_y_front, line, circle):
 		minimum_distance = HIGHEST_NUMBER
 		right_points = None
 		if circle.intersects(x1, y1) and line.intersects(x1, y1):
@@ -128,23 +132,21 @@ class LIDAR:
 		self.obstacle_radius = obstacle_radius
 		self.lasers = [0.0 for angle in range(self.n_lasers)]
 
-	def in_sight(self, x_sight, y_sight, x_sight_back, y_sight_back, x_object, y_object, obj):
-		distance_front = self.distance_between_points(x_sight, y_sight, x_object, y_object)
-		distance_back = self.distance_between_points(x_sight_back, y_sight_back, x_object, y_object)
+	def in_sight(self, x_sight, y_sight, x_forward, y_forward, x_object, y_object, obj):
 		if isinstance(obj, Circle):
-			return (np.sqrt((x_object - x_sight)**2 + (y_object - y_sight)**2) - obj.radius) <= self.max_distance and distance_front < distance_back
+			return (np.sqrt((x_object - x_sight)**2 + (y_object - y_sight)**2) - obj.radius) <= self.max_distance and (x_sight <= x_object < x_forward and y_sight <= y_object < y_forward)
 		elif isinstance(obj, Line):
-			return (np.sqrt((x_object - x_sight)**2 + (y_object - y_sight)**2)) <= self.max_distance and distance_front < distance_back
+			return (np.sqrt((x_object - x_sight)**2 + (y_object - y_sight)**2)) <= self.max_distance and (x_sight <= x_object < x_forward and y_sight <= y_object < y_forward)
 
 	def get_laser_points(self, angle, x, y, theta):
 		angle_rad = angle * self.to_rad
-		xi = x + self.min_distance * np.cos(angle_rad + theta)
-		yi = y + self.min_distance * np.sin(angle_rad + theta)
-		xf = x + self.max_distance * np.cos(angle_rad + theta)
-		yf = y + self.max_distance * np.sin(angle_rad + theta)
-		xi_back = x + self.min_distance * np.cos(angle_rad + theta + 180 * self.to_rad)
-		yi_back = y + self.min_distance * np.sin(angle_rad + theta + 180 * self.to_rad)
-		return xi, yi, xf, yf, xi_back, yi_back
+		cos = np.cos(angle_rad + theta)
+		sin = np.sin(angle_rad + theta)
+		xi = x + self.min_distance * cos
+		yi = y + self.min_distance * sin
+		xf = x + self.max_distance * cos
+		yf = y + self.max_distance * sin
+		return xi, yi, xf, yf
 
 	@staticmethod
 	def distance_between_points(x1, y1, x2, y2):

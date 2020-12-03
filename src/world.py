@@ -10,10 +10,11 @@ class World(Square):
 		# Edges
 		self.objects = list()
 		self.objects.extend(self._edges)
+		# Obstacles
+		self.obstacles = list()
+		self.obstacle_length = RoundObstacle.diameter
 		# Robot
 		self.robot = Robot(dt = dt)
-		# Obstacles
-		self.obstacle_length = RoundObstacle.diameter
 
 	def __repr__(self):
 		repr_ = "--World--"
@@ -71,6 +72,7 @@ class World(Square):
 		if distance_to_nearest_wall <= self.robot.diameter:
 			raise Exception('Obstacle too close to the wall '+'('+str(distance_to_nearest_wall)+'m)'+'. Robot could get stuck between the wall and the obstacle')
 		self.objects.append(RoundObstacle(x = x, y = y, dynamics = dynamics))
+		self.obstacles.append(RoundObstacle(x = x, y = y, dynamics = dynamics))
 
 	def collided(self, x, y):
 		for obj in self.objects:
@@ -82,16 +84,14 @@ class World(Square):
 					return True
 			else:
 				pass
-			return False
+		return False
 
 	def inside_world(self, x, y):
 		return not (x > self._max_x or x < self._min_x or y > self._max_y or y < self._min_y)
 
 	def move_robot(self, v, w):
+		lasers = self.robot.update_lidar(self.obstacles, self._edges)
 		x, y, theta = self.robot.move(v, w)
-		lasers = self.robot.update_lidar(self.objects)
-		#self.robot.plot_laser_distances(-180,179)
-		print(self.robot)
 		reward = 0.0
 		terminal = False
 		observation = []

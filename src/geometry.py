@@ -1,14 +1,16 @@
 import numpy as np
-from math import isclose
-import time
+from math import isclose, sqrt, sin, cos
 
+TO_DEG = 57.29577
+TO_RAD = 0.01745
 class Rotation:
 	def __init__(self, rotation_deg):
-		self.__rotation = rotation_deg * np.pi / 180
-		self.__rot_matrix = np.array([[np.cos(self.__rotation), -np.sin(self.__rotation)],[np.sin(self.__rotation), np.cos(self.__rotation)]])
-	def __call__(self, x, y):
-		res = np.dot(self.__rot_matrix, np.array([x,y]).reshape(2,1))
-		return res[0][0], res[1][0]
+		self.__rotation = rotation_deg * TO_RAD
+		cos_ = cos(self.__rotation)
+		sin_ = sin(self.__rotation)
+		self.__rot_matrix = np.array([[cos_, -sin_],[sin_, cos_]])
+	def __call__(self, array):
+		return np.dot(array.reshape(-1,2), self.__rot_matrix)
 	@property
 	def rot_matrix(self):
 		return self.__rot_matrix
@@ -26,6 +28,8 @@ class Point:
 		return self.__x + other.x, self.__y + other.y
 	def __sub__(self, other):
 		return self.__x - other,x, self.__y - other.y
+	def __call__(self):
+		return np.array([self.__x, self.__y])
 	@property
 	def x(self):
 		return self.__x
@@ -94,24 +98,27 @@ class Line:
 			return None
 
 	def intersects_circle(self, circle):
-		start = time.time()
 		radius, xc, yc = circle.radius, circle.x, circle.y
-		if not self._slope:
+		if self._slope is None:
 			discriminant = radius**2 - (self._intercept - xc)**2
 			if discriminant <= 0:
 				return False
 			x1 = x2 = self._intercept
-			y1 = np.sqrt(discriminant) + yc
-			y2 = -np.sqrt(discriminant) + yc					
+			sqrt_d = sqrt(discriminant) 
+			y1 = sqrt_d + yc
+			y2 = -sqrt_d + yc					
 		else:
 			discriminant = (radius ** 2) * (1 + self._slope ** 2) - (yc - self._slope * xc - self._intercept) ** 2
 			if discriminant <= 0:
 				return False
-			x1 = (xc + yc * self._slope - self._intercept * self._slope + np.sqrt(discriminant)) / (1 + self._slope ** 2)
-			x2 = (xc + yc * self._slope - self._intercept * self._slope - np.sqrt(discriminant)) / (1 + self._slope ** 2)
-			y1 = (self._intercept + xc * self._slope + yc * self._slope ** 2 + self._slope * np.sqrt(discriminant)) / (1 + self._slope ** 2)
-			y2 = (self._intercept + xc * self._slope + yc * self._slope ** 2 - self._slope * np.sqrt(discriminant)) / (1 + self._slope ** 2)
-		end = time.time()
+			den = 1 + self._slope ** 2
+			sqrt_d = sqrt(discriminant)
+			a = xc + yc * self._slope - self._intercept * self._slope
+			b = self._intercept + xc * self._slope + yc * self._slope ** 2
+			x1 = (a + sqrt_d) / den
+			x2 = (a - sqrt_d) / den
+			y1 = (b + self._slope * sqrt_d) / den
+			y2 = (b - self._slope * sqrt_d) / den
 		return [x1,y1,x2,y2]
 
 	@property
@@ -122,8 +129,14 @@ class Line:
 		return self._intercept
 	@property
 	def points(self):
-		return self._points
-	
+		return np.array([self._points[0](),self._points[1]()])
+	def get_xs(self):
+		return np.array([self._points[0].x, self._points[1].x])
+	def get_ys(self):
+		return np.array([self._points[0].y, self._points[1].y])
+	def is_horizontal(self):
+		return self._slope == 0.0
+
 class Edge(Line):
 	def __init__(self, point1, point2):
 		super().__init__(point1, point2)
@@ -149,28 +162,29 @@ class Circle:
 	def outside(self,x, y):
 		return not self.inside(x,y)
 	def intersects_circle(self, other):
-		d = np.sqrt((other.x - self._x)**2 + (other.y - self._y)**2)
+		d = sqrt((other.x - self._x)**2 + (other.y - self._y)**2)
 		return (self._radius + other.radius) > d and d > abs(self._radius - other.radius)
 	def intersects_line(self, line):
 		radius, xc, yc = self._radius, self._x, self._y
-		start = time.time()
-		if not line.slope:
+		if line.slope is None:
 			discriminant = radius**2 - (line.intercept - xc)**2
 			if discriminant <= 0:
-				end = time.time()
 				return False
 			x1 = x2 = line.intercept
-			y1 = np.sqrt(discriminant) + yc
-			y2 = -np.sqrt(discriminant) + yc					
+			sqrt_d = sqrt(discriminant)
+			y1 = sqrt_d + yc
+			y2 = -sqrt_d + yc					
 		else:
 			discriminant = (radius ** 2) * (1 + line.slope ** 2) - (yc - line.slope * xc - line.intercept) ** 2
 			if discriminant <= 0:
-				end = time.time()
 				return False
-			x1 = (xc + yc * line.slope - line.intercept * line.slope + np.sqrt(discriminant)) / (1 + line.slope ** 2)
-			x2 = (xc + yc * line.slope - line.intercept * line.slope - np.sqrt(discriminant)) / (1 + line.slope ** 2)
-			y1 = (line.intercept + xc * line.slope + yc * line.slope ** 2 + line.slope * np.sqrt(discriminant)) / (1 + line.slope ** 2)
-			y2 = (line.intercept + xc * line.slope + yc * line.slope ** 2 - line.slope * np.sqrt(discriminant)) / (1 + line.slope ** 2)
-		end = time.time()
+			den = (1 + line.slope ** 2)
+			sqrt_d = sqrt(discriminant)
+			a = xc + yc * line.slope - line.intercept * line.slope
+			b = line.intercept + xc * line.slope + yc * line.slope ** 2
+			x1 = (a + sqrt_d) / den
+			x2 = (a - sqrt_d) / den
+			y1 = (b + line.slope * sqrt_d) / den
+			y2 = (b - line.slope * sqrt_d) / den
 		return [x1,y1,x2,y2]
 

@@ -3,7 +3,7 @@ from agent import Agent
 import time
 
 # Initialize world
-world = World(dt = 0.1, width = 4, height = 4)
+world = World(dt = 0.001, width = 4, height = 4)
 
 # Add obstacles
 world.add_obstacle(1.0, 1.0)
@@ -21,8 +21,8 @@ agent = Agent(world = world)
 
 # Step robot
 v = 0.1
-w = 0
-samples = 100
+w = 0.0
+samples = 1000
 for t in range(samples):
 	start = time.time()
 	agent.act(v, w)

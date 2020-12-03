@@ -90,17 +90,17 @@ class World(Square):
 		return not (x > self._max_x or x < self._min_x or y > self._max_y or y < self._min_y)
 
 	def move_robot(self, v, w):
-		lasers = self.robot.update_lidar(self.obstacles, self._edges)
-		x, y, theta = self.robot.move(v, w)
+		x, y, theta = self.robot.next_pose(v,w)
+
+		if self.collided(x,y) or not self.inside_world(x,y):
+			terminal = True
+		else:
+			self.robot.move(v, w)
+			lasers = self.robot.update_lidar(self.obstacles, self._edges)			
 		reward = 0.0
 		terminal = False
 		observation = []
 		debug = []
-
-		# Collision with obstacle
-		if self.collided(x,y) or not self.inside_world(x,y):
-			terminal = True
-
 		return observation, reward, terminal, debug
 
 

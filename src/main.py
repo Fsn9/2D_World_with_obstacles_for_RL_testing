@@ -20,9 +20,9 @@ world.add_obstacle(-1.0, -1.0)
 agent = Agent(world = world)
 
 # Step robot
-v = 0.1
-w = 0.0
-samples = 10
+v = 0.2
+w = 0.3
+samples = 50
 for t in range(samples):
 	start = time.time()
 	agent.act(v, w)

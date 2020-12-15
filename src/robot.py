@@ -74,10 +74,7 @@ class Robot(Circle):
 		# Angle differences from the lower distance to wall for each angle range
 		differences = list()
 		for idx, beta in enumerate(betas):
-			if idx < len(betas) - 1:
-				differences += self.difference_vector(beta[0], beta[1] - 1)
-			else:
-				differences += self.difference_vector(beta[0], beta[1] - 1)
+			differences += self.difference_vector(beta[0], beta[1] - 1)
 		cos_differences = np.cos(np.deg2rad(np.array(differences)))
 
 		# Compute distances to walls

@@ -22,7 +22,7 @@ agent = Agent(world = world)
 # Step robot
 v = 0.2
 w = 0.3
-samples = 50
+samples = 100
 for t in range(samples):
 	start = time.time()
 	agent.act(v, w)

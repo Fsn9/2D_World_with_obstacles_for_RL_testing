@@ -133,14 +133,11 @@ class World(Square):
 		if not self.inside_world(x,y) or self.collided():
 			terminal = True
 			reward = 'collision'
-			print('collided', self.robot)
 			self.__rescue_robot()
-			print('rescued:', self.robot)
 		elif self.reached_goal():
-			print('reached goal', self.robot, self.goal)
-			self.__reset_goal()
 			terminal = True
 			reward = 'food'
+			self.__reset_goal()
 		else:
 			self.robot.move(v, w)
 			lasers = self.robot.update_lidar(self.obstacles, self._edges)			

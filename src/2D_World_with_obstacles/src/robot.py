@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import numpy as np
 from geometry import *
 from obstacle import *
@@ -137,7 +139,7 @@ class Robot(Circle):
 			high += 360
 		avg = (high - low) * 0.5
 		differences = list()
-		rng = round(avg)
+		rng = int(round(avg))
 		for i in range(-rng, rng + 1):
 			if i == 0 and avg%1 != 0:
 				continue

@@ -102,7 +102,3 @@ class World(Square):
 			terminal = True
 
 		return observation, reward, terminal, debug
-
-
-
-

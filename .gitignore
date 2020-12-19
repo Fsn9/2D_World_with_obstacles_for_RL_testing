@@ -1,9 +1,8 @@
 src/__pycache__/
+src/.vscode/
 
 build/
 devel/
 
-**/.vscode
-**/__pycache__
 *.pyc
 *.catkin_workspace

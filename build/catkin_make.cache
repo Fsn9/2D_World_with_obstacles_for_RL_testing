@@ -1,2 +1,0 @@
-2D_World_with_obstacles
--DCATKIN_DEVEL_PREFIX=/home/caipirultron/2D_World_with_obstacles_for_RL_testing/devel -DCMAKE_INSTALL_PREFIX=/home/caipirultron/2D_World_with_obstacles_for_RL_testing/install -G Unix Makefiles

@@ -1,1 +1,9 @@
 src/__pycache__/
+
+build/
+devel/
+
+**/.vscode
+**/__pycache__
+*.pyc
+*.catkin_workspace

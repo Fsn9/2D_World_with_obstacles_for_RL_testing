@@ -1,7 +1,8 @@
 from geometry import *
 from obstacle import *
 from robot import Robot 
-from random import randint
+from random import randint, uniform
+from goal import Goal
 
 # Squared world
 class World(Square):
@@ -15,6 +16,8 @@ class World(Square):
 		self.obstacle_length = RoundObstacle.diameter
 		# Robot
 		self.robot = Robot(dt = dt)
+		# Goal
+		self.goal = Goal(x = 0, y = 0.5)
 
 	def __repr__(self):
 		repr_ = "--World--"
@@ -32,19 +35,55 @@ class World(Square):
 					repr_ += '['+str(idx)+'] ' + str(obstacle)
 				else:
 					repr_ += '['+str(idx)+'] ' + str(obstacle) + '\n'
+		repr_ += "\nGoal:\nx: " + str(self.goal)
+		repr_ += "\n"
 		return repr_
 
 	def distance_to_nearest_wall(self, x, y):
 		return min((abs(x - self._min_x), abs(x - self._max_x), abs(y - self._min_y), abs(y - self._max_y)))
-		
+
+	def __reset_goal(self):
+		self.goal.x, self.goal.y = uniform(self._min_x, self._max_x), uniform(self._min_y, self._max_y)
+		if self.goal_valid_position():
+			return
+		else:
+			while True:
+				self.goal.x, self.goal.y = uniform(self._min_x, self._max_x), uniform(self._min_y, self._max_y)
+				if self.goal_valid_position():
+					return
+		return None, None
+	def __rescue_robot(self):
+		self.robot.set_pose(uniform(self._min_x, self._max_x), uniform(self._min_y, self._max_y), self.robot.theta)
+		if not self.collided():
+			return None
+		else:
+			while True:
+				self.robot.set_pose(uniform(self._min_x, self._max_x), uniform(self._min_y, self._max_y), self.robot.theta)
+				if not self.collided():
+					return None
+		return None, None
+
+	def goal_valid_position(self):
+		for obj in self.objects:
+			if isinstance(obj, Circle):
+				if self.goal.intersects_circle(obj):
+					return False
+			elif isinstance(obj, Line):
+				if self.goal.intersects_line(obj):
+					return False
+		return True
+
+	def reached_goal(self):
+		return self.robot.intersects_circle(self.goal)
+
 	def set_obstacles_randomly(self, quantity = 4, type_ = 'round', dynamics = None):
 		x, y = -10000, -10000	
 		for _ in range(quantity):
 			if type_ == 'round':
 				while True:
 					counter_obstacles = 0
-					x = randint(self._min_x, self._max_x)
-					y = randint(self._min_y, self._max_y)
+					x, y = randint(self._min_x, self._max_x), randint(self._min_y, self._max_y)
+					
 					if self.inside_world(x,y) and self.distance_to_nearest_wall(x,y) > self.robot.diameter:
 						for obstacle in self.obstacles:
 							if x != obstacle.x and y != obstacle.y:
@@ -74,7 +113,7 @@ class World(Square):
 		self.objects.append(RoundObstacle(x = x, y = y, dynamics = dynamics))
 		self.obstacles.append(RoundObstacle(x = x, y = y, dynamics = dynamics))
 
-	def collided(self, x, y):
+	def collided(self):
 		for obj in self.objects:
 			if isinstance(obj, Circle):
 				if self.robot.intersects_circle(obj):
@@ -90,15 +129,20 @@ class World(Square):
 		return not (x > self._max_x or x < self._min_x or y > self._max_y or y < self._min_y)
 
 	def move_robot(self, v, w):
-		lasers = self.robot.update_lidar(self.obstacles, self._edges)
-		x, y, theta = self.robot.move(v, w)
-		reward = 0.0
-		terminal = False
+		x, y, theta = self.robot.next_pose(v,w)
+		if not self.inside_world(x,y) or self.collided():
+			terminal = True
+			reward = 'collision'
+			self.__rescue_robot()
+		elif self.reached_goal():
+			terminal = True
+			reward = 'food'
+			self.__reset_goal()
+		else:
+			self.robot.move(v, w)
+			lasers = self.robot.update_lidar(self.obstacles, self._edges)			
+			reward = 0.0
+			terminal = False
 		observation = []
 		debug = []
-
-		# Collision with obstacle
-		if self.collided(x,y) or not self.inside_world(x,y):
-			terminal = True
-
 		return observation, reward, terminal, debug

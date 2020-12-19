@@ -111,11 +111,11 @@ if __name__ == '__main__':
         while not rospy.is_shutdown():
             # v = 2*(np.random.rand() - 0.5)
             v = 1
-            w = -1
+            w = 0
             agent.act(v, w)
 
             turtleSimulation.update_robot()
-            print("Forward velocity = ", v)
+            print(world.robot)
 
             rate.sleep()
 

@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import numpy as np
 from math import isclose, sqrt, sin, cos
 
@@ -157,6 +155,12 @@ class Circle:
 	@property
 	def radius(self):
 		return self._radius
+	@x.setter
+	def x(self, x):
+		self._x = x
+	@y.setter
+	def y(self, y):
+		self._y = y
 	def intersects(self, x, y):
 		return (x - self._x)**2 + (y - self._y)**2 == self._radius**2 or isclose((x - self._x)**2 + (y - self._y)**2, self._radius**2, abs_tol = 1e-4)
 	def inside(self, x, y):

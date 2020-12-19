@@ -16,7 +16,6 @@ class Robot(Circle):
 	diameter = radius * 2.0
 	def __init__(self, dt = 0.04):
 		super().__init__(x = 0, y = 1.5, radius = self.radius)
-		#super().__init__(x = 0, y = 0, radius = self.radius)
 		self.__theta = np.pi * 0.5 
 		self.__position = Point(self._x, self._y)
 		self.__dt = dt # control period
@@ -48,20 +47,22 @@ class Robot(Circle):
 		self._x, self._y, self.__theta = x, y, theta
 
 	def move(self, v, w):
+		self._x, self._y, self.__theta = self.next_pose(v,w)
+
+	def next_pose(self, v, w):
 		v_left = v + w * self.diameter * 0.5
 		v_right = v - w * self.diameter * 0.5
 		dd = (v_left + v_right) * 0.5
 		dth = (v_left - v_right) / self.diameter
-		self._x += dd * np.cos(self.__theta + dth * 0.5) * self.dt
-		self._y += dd * np.sin(self.__theta + dth * 0.5) * self.dt
-		self.__theta = self.normalize_angle(self.__theta)
-		self.__theta += dth * self.dt
-		return self._x, self._y, self.__theta
+		x = self._x + dd * np.cos(self.__theta + dth * 0.5) * self.dt
+		y = self._y + dd * np.sin(self.__theta + dth * 0.5) * self.dt
+		theta = self.__theta + dth * self.dt
+		theta = self.normalize_angle(theta)
+		return x, y, theta
 
 	def update_lidar(self, obstacles, edges):
 		start = time.time()
 		rot = Rotation(self.__theta * TO_DEG)
-
 		## Walls
 		# Angle ranges to map vertexes
 		betas = np.empty((len(edges), 2))
@@ -75,22 +76,19 @@ class Robot(Circle):
 		# Angle differences from the lower distance to wall for each angle range
 		differences = list()
 		for idx, beta in enumerate(betas):
-			if idx == len(betas) - 1:	
-				differences += self.difference_vector(beta[0], beta[1])
-			else:
-				differences += self.difference_vector(beta[0], beta[1])[:-1]
+			differences += self.difference_vector(beta[0], beta[1] - 1)
 		cos_differences = np.cos(np.deg2rad(np.array(differences)))
 
 		# Compute distances to walls
 		angle = 0
 		for idx, edge in enumerate(edges):
+			# minimum distance to wall
 			if edge.is_horizontal():
 				dmin = abs(self._y - edge.intercept)
 			else:
 				dmin = abs(self._x - edge.intercept)
-
 			if betas[idx][0] > betas[idx][1]:	
-				angular_range = betas[idx][1] - betas[idx][0] + 360
+				angular_range = betas[idx][1] - betas[idx][0] + self.__lidar.n_lasers
 				remain = self.__lidar.n_lasers - betas[idx][0]
 				self.__lidar.lasers[betas[idx][0]:] = np.clip((dmin / cos_differences[angle:angle+remain] - self.radius).tolist(), self.__lidar.min_distance, self.__lidar.max_distance)
 				self.__lidar.lasers[:betas[idx][1]] = np.clip((dmin / cos_differences[angle+remain:angle+remain+betas[idx][1]] - self.radius).tolist(), self.__lidar.min_distance, self.__lidar.max_distance)
@@ -99,7 +97,6 @@ class Robot(Circle):
 				angular_range = betas[idx][1] - betas[idx][0]
 				self.__lidar.lasers[betas[idx][0]:betas[idx][1]] = np.clip((dmin / cos_differences[angle:angle+angular_range] - self.radius).tolist(), self.__lidar.min_distance, self.__lidar.max_distance)
 				angle += angular_range
-
 		## Obstacles
 		# Get angle positions of the obstacles
 		vectors_obstacles = np.empty((len(obstacles),2))
@@ -109,14 +106,14 @@ class Robot(Circle):
 		deltas = np.rad2deg(np.arctan2(vectors_obstacles[:,1], vectors_obstacles[:,0]))
 		deltas = np.where(deltas < 0, deltas + 360, deltas).astype(int)
 		alphas = np.rad2deg(np.arctan(self.obstacle_radius / distances)).astype(int)
-
 		for i in range(len(obstacles)):
 			# if faraway
 			if (distances[i] - self.obstacle_radius - self.radius) > self.__lidar.max_distance:
 				self.__lidar.lasers[deltas[i] - alphas[i]:deltas[i] + alphas[i]] = [self.__lidar.max_distance] * alphas[i] * 2
 			# if near
 			else:
-				angles = [angle for angle in range(deltas[i] - alphas[i], deltas[i] + alphas[i] + 1)]
+				angles = np.array([angle for angle in range(deltas[i] - alphas[i], deltas[i] + alphas[i] + 1)])
+				angles = np.where(angles >= 360, angles - 360, angles).tolist()
 				for j, angle in enumerate(angles):
 					distance = self.__lidar.max_distance
 					xi, yi, xf, yf = self.__lidar.get_laser_points(angles[j], self._x, self._y, self.__theta)
@@ -128,9 +125,6 @@ class Robot(Circle):
 							self.__lidar.lasers[angle] = np.clip(min(distance, self.__lidar.lasers[angle]), self.__lidar.min_distance, self.__lidar.max_distance)
 						else:
 							self.__lidar.lasers[angle] = np.clip(distance, self.__lidar.min_distance, self.__lidar.max_distance)
-		#self.plot_laser_distances(-180,179)
-		end = time.time()
-		#print('update lidar time:', (end-start) * 1000,'ms')
 		return self.__lidar.lasers
 
 	@staticmethod	
@@ -138,10 +132,10 @@ class Robot(Circle):
 		if high < low:
 			high += 360
 		avg = (high - low) * 0.5
+		rng = math.ceil(avg)
 		differences = list()
-		rng = int(round(avg))
 		for i in range(-rng, rng + 1):
-			if i == 0 and avg%1 != 0:
+			if i == 0 and not avg.is_integer():
 				continue
 			differences.append(i)
 		return differences
@@ -149,9 +143,9 @@ class Robot(Circle):
 	@staticmethod
 	def normalize_angle(angle):
 		if angle > math.pi:
-			angle = angle - math.pi
+			angle = angle - 2*math.pi
 		elif angle < - math.pi:
-			angle = angle + math.pi
+			angle = angle + 2*math.pi
 		return angle
 
 	def compute_distance(self, x1, y1, x2, y2, laser_x_front, laser_y_front, line, circle):
@@ -193,6 +187,9 @@ class LIDAR:
 		self.obstacle_radius = obstacle_radius
 		self.lasers = [0.0 for angle in range(self.n_lasers)]
 
+	def __len__(self):
+		return len(self.lasers)
+
 	def in_between(self, xi, xm, xf):
 		return xi <= xm <= xf or xf <= xm <= xi
 
@@ -215,9 +212,3 @@ class LIDAR:
 	@staticmethod
 	def distance_between_points(x1, y1, x2, y2):
 		return np.linalg.norm(np.array([x1,y1]) - np.array([x2,y2]))
-
-	
-		
-
-
-

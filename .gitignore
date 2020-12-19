@@ -1,8 +1,11 @@
 src/__pycache__/
+src/.vscode/
+
+src/2D_World_with_obstacles/src/__pycache__/
+src/2D_World_with_obstacles/src/.vscode/
 
 build/
 devel/
 
-**/.vscode
 *.pyc
-.catkin_workspace
+*.catkin_workspace

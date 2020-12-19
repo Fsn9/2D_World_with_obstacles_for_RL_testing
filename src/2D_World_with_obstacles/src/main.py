@@ -20,13 +20,12 @@ world.add_obstacle(-1.0, -1.0)
 agent = Agent(world = world)
 
 # Step robot
-v = 0.1
+v = 0
 w = 0.1
-samples = 10
+samples = 100
 for t in range(samples):
 	start = time.time()
 	agent.act(v, w)
-	print(world.robot)
-	# world.robot.plot_laser_distances(-180,179)
 	end = time.time()
-	# print('simulation cycle time:', (end - start) * 1000 ,'ms')
+	print(world.robot)
+	print('simulation cycle time:', (end - start) * 1000 ,'ms')

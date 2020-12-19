@@ -1,0 +1,8 @@
+prefix=/home/caipirultron/2D_World_with_obstacles_for_RL_testing/devel
+
+Name: 2D_World_with_obstacles
+Description: Description of 2D_World_with_obstacles
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

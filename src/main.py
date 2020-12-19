@@ -20,11 +20,12 @@ world.add_obstacle(-1.0, -1.0)
 agent = Agent(world = world)
 
 # Step robot
-v = 0.2
-w = 0.3
-samples = 100
+v = 0
+w = 0.1
+samples = 1000
 for t in range(samples):
 	start = time.time()
 	agent.act(v, w)
 	end = time.time()
+	print(world.robot)
 	print('simulation cycle time:', (end - start) * 1000 ,'ms')

@@ -26,6 +26,11 @@ TO_RAD = 0.01745
 
 class DQN(object):
     def __init__(self, first_laser_scan, first_goal_position, robot_pose):
+        # Hyperparameters
+        with open('hyperparameters.json','r') as hp_file:
+            hp_stream = hp_file.read()
+        hp = json.load(hp_stream)
+
         # DQN parameters
         self.episodes = hp['dqn']['episodes']
         self.initial_epsilon = hp['dqn']['initial_epsilon']
@@ -36,11 +41,6 @@ class DQN(object):
         self.actual_epsilon = self.initial_epsilon
         self.is_learning = True
         self.reward = 0.0
-
-        # Hyperparameters
-        with open('hyperparameters.json','r') as hp_file:
-            hp_stream = hp_file.read()
-        hp = json.load(hp_stream)
 
         # Constants
         self.max_distance_map = sqrt(hp['map']['width'] ** 2 + hp['map']['height'] ** 2)

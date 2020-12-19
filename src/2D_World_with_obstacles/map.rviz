@@ -80,6 +80,14 @@ Visualization Manager:
       Topic: /world_walls
       Unreliable: false
       Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /round_obstacles
+      Name: Round Obstacles
+      Namespaces:
+        "": true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -117,10 +125,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 96.64842987060547
+      Scale: 190.7668914794922
       Target Frame: <Fixed Frame>
-      X: 0
-      Y: 0
+      X: 0.5460066795349121
+      Y: 0.02935520000755787
     Saved: ~
 Window Geometry:
   Displays:

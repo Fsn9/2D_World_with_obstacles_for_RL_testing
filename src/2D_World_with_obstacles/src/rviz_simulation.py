@@ -6,7 +6,7 @@ import tf
 
 from rospy.numpy_msg import numpy_msg
 from visualization_msgs.msg import Marker, MarkerArray
-from geometry_msgs.msg import Point32, Pose, PoseStamped, PolygonStamped
+from geometry_msgs.msg import Point, Pose, PoseStamped, PolygonStamped
 from nav_msgs.msg import OccupancyGrid
 from tf.transformations import quaternion_from_euler
 
@@ -27,12 +27,14 @@ class GridWorldSimulation():
 
         # ROS Publishers
         self.world_walls_publisher = rospy.Publisher('world_walls', PolygonStamped, queue_size=1)
+        self.round_obstacles_publisher = rospy.Publisher('round_obstacles', Marker, queue_size=1)
         self.robot_marker_publisher = rospy.Publisher('robot_marker', Marker, queue_size=1)
         self.angle_marker_publisher = rospy.Publisher('angle_marker', PoseStamped, queue_size=1)
 
         # Setup tf tree and rviz objects
         self.world_tf = tf.TransformBroadcaster()
         self.world_walls = PolygonStamped()
+        self.round_obstacles = Marker()
         self.robot_position = Marker()
         self.robot_angle = PoseStamped()
     
@@ -43,14 +45,36 @@ class GridWorldSimulation():
             self.world_walls.polygon.points[i].z = 0
 
         # Initialize world obstacles
-        
+        self.round_obstacles.header.frame_id = "map_frame"
+        self.round_obstacles.type = self.round_obstacles.SPHERE_LIST
+        self.round_obstacles.action = self.round_obstacles.ADD
+        self.round_obstacles.scale.x = 2*self.world.obstacles[0].radius
+        self.round_obstacles.scale.y = 2*self.world.obstacles[0].radius
+        self.round_obstacles.scale.z = 0.1
+        self.round_obstacles.color.a = 1.0
+        self.round_obstacles.color.r = 0.0
+        self.round_obstacles.color.g = 1.0
+        self.round_obstacles.color.b = 0.0
+        self.round_obstacles.pose.position.x = 0.0
+        self.round_obstacles.pose.position.y = 0.0
+        self.round_obstacles.pose.position.z = -0.1
+        self.round_obstacles.pose.orientation.x = 0.0
+        self.round_obstacles.pose.orientation.y = 0.0
+        self.round_obstacles.pose.orientation.z = 0.0
+        self.round_obstacles.pose.orientation.w = 1.0
+        for obstacles in self.world.obstacles:
+            round_obstacle = Point()
+            round_obstacle.x = obstacles.x
+            round_obstacle.y = obstacles.y
+            round_obstacle.z = 0
+            self.round_obstacles.points.append( round_obstacle )
 
         # Initialize robot position marker
         self.robot_position.header.frame_id = "robot_frame"
         self.robot_position.type = self.robot_position.CYLINDER
         self.robot_position.action = self.robot_position.ADD
-        self.robot_position.scale.x = 1.0
-        self.robot_position.scale.y = 1.0
+        self.robot_position.scale.x = 2*self.world.robot.radius
+        self.robot_position.scale.y = 2*self.world.robot.radius
         self.robot_position.scale.z = 0.1
         self.robot_position.color.a = 1.0
         self.robot_position.color.r = 0.0
@@ -85,6 +109,7 @@ class GridWorldSimulation():
         # Sends transformations and publishes Rviz graphical objects
         self.world_tf.sendTransform((0,0,0),world_quat,rospy.Time.now(),"map_frame", "world")
         self.world_walls_publisher.publish(self.world_walls)
+        self.round_obstacles_publisher.publish(self.round_obstacles)
 
     # This function draws the robot in rviz
     def draw_robot(self):
@@ -103,18 +128,18 @@ if __name__ == '__main__':
         # Initialize world
         sim_dt = 0.01
         sim_freq = 1/sim_dt
-        world = World(dt = sim_dt, width = 8, height = 8)
+        world = World(dt = sim_dt, width = 4, height = 4)
 
         # Add obstacles
-        # world.add_obstacle(1.0, 1.0)
-        # world.add_obstacle(1.0, 0.0)
-        # world.add_obstacle(1.0, -1.0)
-        # world.add_obstacle(0.0, 1.0)
-        # world.add_obstacle(0.0, 0.0)
-        # world.add_obstacle(0.0, -1.0)
-        # world.add_obstacle(-1.0, 1.0)
-        # world.add_obstacle(-1.0, 0.0)
-        # world.add_obstacle(-1.0, -1.0)
+        world.add_obstacle(1.0, 1.0)
+        world.add_obstacle(1.0, 0.0)
+        world.add_obstacle(1.0, -1.0)
+        world.add_obstacle(0.0, 1.0)
+        world.add_obstacle(0.0, 0.0)
+        world.add_obstacle(0.0, -1.0)
+        world.add_obstacle(-1.0, 1.0)
+        world.add_obstacle(-1.0, 0.0)
+        world.add_obstacle(-1.0, -1.0)
 
         # Give world to the agent
         agent = Agent(world = world)
@@ -129,8 +154,8 @@ if __name__ == '__main__':
         # Main ROS loop
         rate = rospy.Rate(sim_freq)  # 10hz
         while not rospy.is_shutdown():
-            v = 1
-            w = 0
+            v = 1.0
+            w = 0.5
             agent.act(v, w)
 
             turtleSimulation.draw_world()

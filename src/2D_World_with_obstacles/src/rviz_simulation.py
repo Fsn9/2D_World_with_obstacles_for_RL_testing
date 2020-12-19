@@ -109,12 +109,13 @@ if __name__ == '__main__':
         # Main ROS loop
         rate = rospy.Rate(sim_freq)  # 10hz
         while not rospy.is_shutdown():
-            v = 0
-            w = np.random.rand()
+            # v = 2*(np.random.rand() - 0.5)
+            v = 1
+            w = -1
             agent.act(v, w)
 
             turtleSimulation.update_robot()
-            print(world.robot)
+            print("Forward velocity = ", v)
 
             rate.sleep()
 

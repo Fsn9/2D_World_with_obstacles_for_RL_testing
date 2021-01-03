@@ -14,8 +14,9 @@ class World(Square):
 		# Obstacles
 		self.obstacles = list()
 		self.obstacle_length = RoundObstacle.diameter
-		# Robot
+		# Robot and initial lidar scanning
 		self.robot = Robot(dt = dt)
+		lasers = self.robot.update_lidar(self.obstacles, self._edges)
 		# Goal
 		self.goal = Goal(x = 0, y = 0.5)
 
@@ -130,19 +131,21 @@ class World(Square):
 
 	def move_robot(self, v, w):
 		x, y, theta = self.robot.next_pose(v,w)
-		if not self.inside_world(x,y) or self.collided():
-			terminal = True
-			reward = 'collision'
+		if self.collided():
+			terminal = True, 'collision'
+			self.__rescue_robot()
+		elif not self.inside_world(x,y):
+			terminal = True, 'outside world'
 			self.__rescue_robot()
 		elif self.reached_goal():
-			terminal = True
-			reward = 'food'
+			terminal = True, 'goal'
 			self.__reset_goal()
 		else:
 			self.robot.move(v, w)
-			lasers = self.robot.update_lidar(self.obstacles, self._edges)			
-			reward = 0.0
-			terminal = False
-		observation = []
-		debug = []
-		return observation, reward, terminal, debug
+			self.robot.update_lidar(self.obstacles, self._edges)			
+			terminal = False, None
+		return terminal
+
+	def observe(self):
+		return tuple(self.robot.lidar.lasers), (self.robot.x, self.robot.y, self.robot.theta, self.goal.x, self.goal.y)
+		

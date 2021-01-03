@@ -143,9 +143,9 @@ class Robot(Circle):
 	@staticmethod
 	def normalize_angle(angle):
 		if angle > math.pi:
-			angle = angle - 2*math.pi
+			angle = angle - 2 * math.pi
 		elif angle < - math.pi:
-			angle = angle + 2*math.pi
+			angle = angle + 2 * math.pi
 		return angle
 
 	def compute_distance(self, x1, y1, x2, y2, laser_x_front, laser_y_front, line, circle):

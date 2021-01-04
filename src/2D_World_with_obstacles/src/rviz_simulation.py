@@ -5,6 +5,7 @@ import numpy as np
 import tf
 
 from rospy.numpy_msg import numpy_msg
+from sensor_msgs.msg import LaserScan
 from visualization_msgs.msg import Marker, MarkerArray
 from geometry_msgs.msg import Point, Pose, PoseStamped, PolygonStamped
 from nav_msgs.msg import OccupancyGrid
@@ -16,7 +17,10 @@ import time
 
 class GridWorldSimulation():
 
-    def __init__(self, world):
+    def __init__(self, world, show_scan = False):
+
+        # Get simulation configs
+        self.show_scan = show_scan
 
         # Get map size
         self.world = world
@@ -31,6 +35,7 @@ class GridWorldSimulation():
         self.robot_marker_publisher = rospy.Publisher('robot_marker', Marker, queue_size=1)
         self.angle_marker_publisher = rospy.Publisher('angle_marker', PoseStamped, queue_size=1)
         self.goal_marker_publisher = rospy.Publisher('goal_marker', Marker, queue_size=1)
+        self.scan_publisher = rospy.Publisher('laserscan', LaserScan, queue_size=1)
 
         # Setup tf tree and rviz objects
         self.world_tf = tf.TransformBroadcaster()
@@ -39,6 +44,7 @@ class GridWorldSimulation():
         self.robot_position = Marker()
         self.goal_position = Marker()
         self.robot_angle = PoseStamped()
+        self.scan = LaserScan()
     
         # Initialize world polygon
         self.world_walls.header.frame_id = "map_frame"
@@ -119,6 +125,19 @@ class GridWorldSimulation():
         self.goal_position.pose.orientation.z = 0.0
         self.goal_position.pose.orientation.w = 1.0
 
+        # Initialize LIDAR scan message
+        if self.show_scan:
+            self.scan.header.frame_id = "robot_frame"
+            self.scan.angle_min = 0        # start angle of the scan [rad]
+            self.scan.angle_max = 2*np.pi        # end angle of the scan [rad]
+            self.scan.angle_increment = 2*np.pi/360  # angular distance between measurements [rad]
+            self.scan.time_increment = 0 # time between measurements [seconds] - if your scanner
+                                        # is moving, this will be used in interpolating position
+                                        # of 3d points
+            self.scan.scan_time = 0     # time between scans [seconds]
+            self.scan.range_min = 0.01           # minimum range value [m]
+            self.scan.range_max = 5        # maximum range value [m]
+
         # Initial map and robot update
         self.draw_world()
         self.draw_robot()
@@ -145,10 +164,16 @@ class GridWorldSimulation():
         robot_marker_position_y = self.world.robot.y
         robot_quat = quaternion_from_euler(0, 0, self.world.robot.theta)
 
-        # Sends transformations and publishes Rviz graphical objects
+        # Sends transformation
         self.world_tf.sendTransform((robot_marker_position_x, robot_marker_position_y,0), robot_quat, rospy.Time.now(), "robot_frame", "world")
+
+        # Publishes Rviz graphical objects
         self.robot_marker_publisher.publish(self.robot_position)
         self.angle_marker_publisher.publish(self.robot_angle)
+
+        if self.show_scan:
+            self.scan.ranges = self.world.robot.lidar.lasers
+            self.scan_publisher.publish(self.scan)
 
 if __name__ == '__main__':
     try:
@@ -176,7 +201,7 @@ if __name__ == '__main__':
         rospy.loginfo("Starting robot simulation...")
         
         # Initialize simulation object
-        turtleSimulation = GridWorldSimulation(world)
+        turtleSimulation = GridWorldSimulation(world, show_scan = True)
         turtleSimulation.draw_world() # initial drawing
 
         # Faster
@@ -184,7 +209,7 @@ if __name__ == '__main__':
         #    agent.act()
 
         # Main ROS loop
-        sim_rate = 100
+        sim_rate = 10
         rate = rospy.Rate(sim_rate)
         while not rospy.is_shutdown():
             learning = agent.act()
@@ -193,7 +218,7 @@ if __name__ == '__main__':
                 turtleSimulation.draw_robot()
             else:
                 break
-            #rate.sleep()
+            rate.sleep()
 
     except rospy.ROSInterruptException:
         pass
